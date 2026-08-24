@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   findEventById,
@@ -25,6 +26,26 @@ export default function EventDetails() {
   const pathParts = window.location.pathname.split("/");
   const id = pathParts[pathParts.length - 1];
   const event = findEventById(id);
+  const [countdown, setCountdown] = useState(() =>
+    event ? getCountdown(event.date) : null,
+  );
+
+  useEffect(() => {
+    if (!event) {
+      return undefined;
+    }
+
+    function updateCountdown() {
+      setCountdown(getCountdown(event.date));
+    }
+
+    updateCountdown();
+    const intervalId = window.setInterval(updateCountdown, 1000);
+
+    return function stopCountdown() {
+      window.clearInterval(intervalId);
+    };
+  }, [event?.date]);
 
   if (!event) {
     return (
@@ -46,8 +67,6 @@ export default function EventDetails() {
   const alreadyRegistered = registrations.some(function (item) {
     return item.eventId === event.id && item.email === activeUser.email;
   });
-  const countdown = getCountdown(event.date);
-
   function handleRegistration(formEvent) {
     formEvent.preventDefault();
 
