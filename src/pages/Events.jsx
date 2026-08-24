@@ -1,25 +1,56 @@
-import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import EventCard from "../components/EventCard.jsx";
-import { getAllEvents } from "../utils/storage.js";
+import {
+  getAllEvents,
+  readFromLocalStorage,
+  saveToLocalStorage,
+} from "../utils/storage.js";
+
+const categories = [
+  "Technical",
+  "Cultural",
+  "Sports",
+  "Workshop",
+  "Seminar",
+  "Hackathon",
+];
 
 export default function Events() {
-  const [keyword, setKeyword] = useState("");
-  const [category, setCategory] = useState("all");
+  const events = getAllEvents();
+  const customEvents = readFromLocalStorage("customEvents", []);
 
-  // re-reads localStorage each render so a newly-added event shows up
-  const allEvents = getAllEvents();
+  function deleteEvent(eventId) {
+    const answer = window.confirm("Do you want to delete this event?");
+    if (!answer) {
+      return;
+    }
 
-  const filtered = useMemo(() => {
-    const kw = keyword.trim().toLowerCase();
-    return allEvents.filter((ev) => {
-      const matchesKeyword =
-        ev.title.toLowerCase().includes(kw) || ev.organizer.toLowerCase().includes(kw);
-      const matchesCategory = category === "all" || ev.category === category;
-      return matchesKeyword && matchesCategory;
+    const remainingEvents = customEvents.filter(function (event) {
+      return event.id !== eventId;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyword, category, allEvents.length]);
+    saveToLocalStorage("customEvents", remainingEvents);
+    window.location.reload();
+  }
+
+  function filterEvents() {
+    const searchInput = document.querySelector("#event-search");
+    const categoryInput = document.querySelector("#event-category");
+    const cards = document.querySelectorAll(".card");
+    const searchText = searchInput.value.trim().toLowerCase();
+
+    cards.forEach(function (card) {
+      const eventId = Number(card.getAttribute("data-id"));
+      const event = events.find(function (item) {
+        return item.id === eventId;
+      });
+      const hasSearchText =
+        event.title.toLowerCase().includes(searchText) ||
+        event.organizer.toLowerCase().includes(searchText);
+      const hasCategory =
+        categoryInput.value === "all" || event.category === categoryInput.value;
+      card.style.display = hasSearchText && hasCategory ? "block" : "none";
+    });
+  }
 
   return (
     <main>
@@ -27,33 +58,44 @@ export default function Events() {
         <div className="container">
           <div className="section-head">
             <h2>All Events</h2>
-            <p><Link to="/add-event">+ Add a new event</Link></p>
+            <p>
+              <Link to="/add-event">+ Add a new event</Link>
+            </p>
           </div>
 
           <div className="filter-bar">
             <input
+              id="event-search"
               type="text"
               placeholder="Search by event name or organizer..."
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+              onInput={filterEvents}
             />
-            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            <select id="event-category" onChange={filterEvents}>
               <option value="all">All categories</option>
-              <option value="Technical">Technical</option>
-              <option value="Cultural">Cultural</option>
-              <option value="Sports">Sports</option>
-              <option value="Workshop">Workshop</option>
-              <option value="Seminar">Seminar</option>
-              <option value="Hackathon">Hackathon</option>
+              {categories.map(function (category) {
+                return (
+                  <option value={category} key={category}>
+                    {category}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
           <div className="event-grid">
-            {filtered.length ? (
-              filtered.map((ev) => <EventCard key={ev.id} ev={ev} />)
-            ) : (
-              <p className="empty-state">No events match your search.</p>
-            )}
+            {events.map(function (event) {
+              const isCustomEvent = customEvents.some(function (customEvent) {
+                return customEvent.id === event.id;
+              });
+
+              return (
+                <EventCard
+                  key={event.id}
+                  ev={event}
+                  onDelete={isCustomEvent ? deleteEvent : null}
+                />
+              );
+            })}
           </div>
         </div>
       </section>

@@ -1,18 +1,20 @@
 import { Link } from "react-router-dom";
 import { formatDate, getCategoryTag } from "../utils/storage.js";
 
-export default function EventCard({ ev }) {
+export default function EventCard({ ev, onDelete }) {
+  const category = getCategoryTag(ev.category);
+
   return (
     <div className="card" data-id={ev.id}>
       <div className="card-img">
         {ev.image ? (
           <img src={ev.image} alt={ev.title} />
         ) : (
-          <span>{getCategoryTag(ev.category)}</span>
+          <span>{category}</span>
         )}
       </div>
       <div className="card-body">
-        <span className="tag">{getCategoryTag(ev.category)}</span>
+        <span className="tag">{category}</span>
         <h3>{ev.title}</h3>
         <p className="meta">Date: {formatDate(ev.date)}</p>
         <p className="meta">Venue: {ev.venue}</p>
@@ -21,6 +23,11 @@ export default function EventCard({ ev }) {
           <Link className="link-btn" to={`/events/${ev.id}`}>
             View details
           </Link>
+          {onDelete && (
+            <button className="delete-btn" onClick={() => onDelete(ev.id)}>
+              Delete
+            </button>
+          )}
         </div>
       </div>
     </div>

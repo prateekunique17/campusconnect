@@ -1,53 +1,24 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+export function showToast(message, isError) {
+  const toast = document.querySelector(".toast");
 
-const ToastContext = createContext(null);
+  if (!toast) {
+    return;
+  }
 
-export function ToastProvider({ children }) {
-  const [toast, setToast] = useState({
-    message: "",
-    isError: false,
-    show: false,
-  });
-  const timerRef = useRef(null);
+  toast.textContent = message;
+  toast.classList.toggle("error", Boolean(isError));
+  toast.classList.add("show");
 
-  const showToast = useCallback((message, isError = false) => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-
-    setToast({ message, isError, show: true });
-    timerRef.current = setTimeout(() => {
-      setToast((current) => ({ ...current, show: false }));
-    }, 2500);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <ToastContext.Provider value={showToast}>
-      {children}
-      <div
-        className={`toast${toast.show ? " show" : ""}${toast.isError ? " error" : ""}`}
-      >
-        {toast.message}
-      </div>
-    </ToastContext.Provider>
-  );
+  setTimeout(function () {
+    toast.classList.remove("show");
+  }, 2500);
 }
 
-export function useToast() {
-  return useContext(ToastContext);
+export function ToastProvider({ children }) {
+  return (
+    <>
+      {children}
+      <div className="toast"></div>
+    </>
+  );
 }

@@ -6,7 +6,12 @@ export function saveToLocalStorage(key, value) {
 
 export function readFromLocalStorage(key, fallback) {
   const raw = window.localStorage.getItem(key);
-  return raw ? JSON.parse(raw) : fallback;
+
+  if (raw) {
+    return JSON.parse(raw);
+  }
+
+  return fallback;
 }
 
 export function getAllEvents() {
@@ -15,7 +20,9 @@ export function getAllEvents() {
 }
 
 export function findEventById(id) {
-  return getAllEvents().find((event) => event.id === Number(id));
+  const numberId = Number(id);
+  const events = getAllEvents();
+  return events.find((event) => event.id === numberId);
 }
 
 export function formatDate(iso) {

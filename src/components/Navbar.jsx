@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 
-export default function Navbar({ theme, onToggleTheme }) {
+export default function Navbar({ theme, activeUser, onToggleTheme, onLogout }) {
   return (
     <header className="navbar">
       <div className="container">
@@ -8,14 +8,31 @@ export default function Navbar({ theme, onToggleTheme }) {
           Campus<span>Connect</span>
         </div>
         <nav className="nav-links">
-          <NavLink to="/" end>Home</NavLink>
+          <NavLink to="/" end>
+            Home
+          </NavLink>
           <NavLink to="/events">Events</NavLink>
           <NavLink to="/add-event">Add Event</NavLink>
           <NavLink to="/registrations">My Registrations</NavLink>
         </nav>
-        <button id="theme-toggle" className="theme-toggle" onClick={onToggleTheme}>
-          {theme === "light" ? "Light Mode" : "Dark Mode"}
-        </button>
+        <div className="nav-actions">
+          <button
+            id="theme-toggle"
+            className="theme-toggle"
+            onClick={onToggleTheme}
+          >
+            {theme === "light" ? "Light Mode" : "Dark Mode"}
+          </button>
+          {activeUser ? (
+            <button className="nav-login" onClick={onLogout}>
+              Log out
+            </button>
+          ) : (
+            <NavLink to="/login" className="nav-login">
+              Sign in
+            </NavLink>
+          )}
+        </div>
       </div>
     </header>
   );

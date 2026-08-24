@@ -1,13 +1,62 @@
-/* =======================================================
-   Static seed data — the same EVENTS array that used to live
-   at the top of script.js. Kept separate from components so
-   any page can import it without duplicating it.
-   ======================================================= */
 export const EVENTS = [
-  { id: 1, title: "CodeSprint 24hr Hackathon",   category: "Technical", date: "2026-09-05T10:00:00", venue: "CS Block Auditorium", organizer: "Evolve AI Society", seats: 12, image: null },
-  { id: 2, title: "Rhythms - Cultural Night",     category: "Cultural",  date: "2026-09-12T18:00:00", venue: "Open Air Theatre",     organizer: "Cultural Council",  seats: 30, image: null },
-  { id: 3, title: "Inter-Dept Football Cup",      category: "Sports",    date: "2026-09-08T16:00:00", venue: "Main Ground",          organizer: "Sports Committee",  seats: 5,  image: null },
-  { id: 4, title: "Intro to Prompt Engineering",  category: "Workshop",  date: "2026-09-03T14:00:00", venue: "Seminar Hall 2",       organizer: "Evolve AI Society", seats: 18, image: null },
-  { id: 5, title: "AI in Healthcare - Seminar",   category: "Seminar",   date: "2026-09-15T11:00:00", venue: "Auditorium 1",         organizer: "AIML Dept",         seats: 60, image: null },
-  { id: 6, title: "DataLens Analytics Challenge", category: "Hackathon", date: "2026-09-20T09:00:00", venue: "Innovation Lab",       organizer: "Data Science Club", seats: 8,  image: null },
+  {
+    id: 1,
+    title: "CodeArambh 2.0",
+    category: "Hackathon",
+    date: "2026-09-05T10:00:00",
+    venue: "CS Block Auditorium",
+    organizer: "Evolve AI Society",
+    seats: 12,
+    image: "https://d8it4huxumps7.cloudfront.net/uploads/images/opportunity/mobile_banner/6a8839c316fbb_codearambh-20-24-hour-national-level-hackathon-dare-to-code-dare-to-create.png",
+  },
+  {
+    id: 2,
+    title: "Cultural Night",
+    category: "Cultural",
+    date: "2026-09-12T18:00:00",
+    venue: "Open Air Theatre",
+    organizer: "Cultural Council",
+    seats: 30,
+    image: "https://i.pinimg.com/736x/70/6f/7b/706f7bccafe98b87da5072961d59d9fb.jpg",
+  },
+  {
+    id: 3,
+    title: "Inter-Dept Football Cup",
+    category: "Sports",
+    date: "2026-09-08T16:00:00",
+    venue: "Main Ground",
+    organizer: "Sports Committee",
+    seats: 5,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSpdG5GwzPbl_07HObxq6xNBcUF8bvibvxK65fzqLXA-AYgoy8I08DWueA&s=10",
+  },
+  {
+    id: 4,
+    title: "Intro to Prompt Engineering",
+    category: "Workshop",
+    date: "2026-09-03T14:00:00",
+    venue: "Seminar Hall 2",
+    organizer: "Evolve AI Society",
+    seats: 18,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMLLSDJ7HZtWtzdDTiz33L6lZbrSAHtPNpuq7cx7f6g5xO_ryhmxIXTd4&s=10",
+  },
+  {
+    id: 5,
+    title: "AI in Healthcare - Seminar",
+    category: "Seminar",
+    date: "2026-09-15T11:00:00",
+    venue: "Auditorium 1",
+    organizer: "AIML Dept",
+    seats: 60,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSW1GPqcCT_RAUCuZPA3QeCJs6WkfFxo51miR-72oB-OSzmVbyB3fZwLHU&s=10",
+  },
+  {
+    id: 6,
+    title: "DataLens Analytics Challenge",
+    category: "Hackathon",
+    date: "2026-09-20T09:00:00",
+    venue: "Innovation Lab",
+    organizer: "Data Science Club",
+    seats: 8,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0HY0vtkcd4AZ9QEU3HpmuQlIqMtITedHycE6gxnSUIIxHoOq-_jgfcFk&s=10",
+  },
 ];
