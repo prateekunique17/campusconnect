@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Link, useParams } from "react-router-dom";
 import {
   findEventById,
   formatDate,
   getCategoryTag,
   readFromLocalStorage,
   saveToLocalStorage,
-} from "../utils/storage.js";
-import { showToast } from "../context/ToastContext.jsx";
+} from "../content/storage.js";
+import { showToast } from "../content/ToastContent.jsx";
 
+// Helper function to calculate remaining days, hours, minutes, and seconds
 function getCountdown(date) {
   const eventTime = new Date(date).getTime();
   const currentTime = Date.now();
@@ -23,29 +24,52 @@ function getCountdown(date) {
 }
 
 export default function EventDetails() {
-  const pathParts = window.location.pathname.split("/");
-  const id = pathParts[pathParts.length - 1];
+  const { id } = useParams();
   const event = findEventById(id);
+  const activeUser = readFromLocalStorage("activeUser", { email: "" });
+
+  // ----------------------------------------------------
+  // 1. useState: Reactive state for live countdown & registration status
+  // ----------------------------------------------------
+  // Stores live countdown time values
   const [countdown, setCountdown] = useState(() =>
-    event ? getCountdown(event.date) : null,
+    event ? getCountdown(event.date) : { days: 0, hours: 0, minutes: 0, seconds: 0 }
   );
+  // Stores registration submission status
+  const [isRegistered, setIsRegistered] = useState(false);
 
+  // ----------------------------------------------------
+  // 2. useEffect: Sets up interval timer for countdown
+  // ----------------------------------------------------
   useEffect(() => {
-    if (!event) {
-      return undefined;
-    }
+    if (!event) return;
 
-    function updateCountdown() {
+    // Run every 1 second to decrement countdown
+    const intervalId = setInterval(() => {
       setCountdown(getCountdown(event.date));
-    }
+    }, 1000);
 
-    updateCountdown();
-    const intervalId = window.setInterval(updateCountdown, 1000);
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
+  }, [event]);
 
-    return function stopCountdown() {
-      window.clearInterval(intervalId);
-    };
-  }, [event?.date]);
+  // ----------------------------------------------------
+  // 3. useRef: References form input to focus or inspect directly
+  // ----------------------------------------------------
+  // Ref pointing to the student name input field
+  const nameInputRef = useRef(null);
+
+  // ----------------------------------------------------
+  // 4. useMemo: Checks registration status without repeated array loops
+  // ----------------------------------------------------
+  // Check if current user is already in registrations list
+  const alreadyRegistered = useMemo(() => {
+    if (!event || !activeUser) return false;
+    const registrations = readFromLocalStorage("registrations", []);
+    return registrations.some(
+      (item) => item.eventId === event.id && item.email === activeUser.email
+    );
+  }, [event, activeUser, isRegistered]);
 
   if (!event) {
     return (
@@ -62,15 +86,9 @@ export default function EventDetails() {
     );
   }
 
-  const activeUser = readFromLocalStorage("activeUser", null);
-  const registrations = readFromLocalStorage("registrations", []);
-  const alreadyRegistered = registrations.some(function (item) {
-    return item.eventId === event.id && item.email === activeUser.email;
-  });
-  function handleRegistration(formEvent) {
-    formEvent.preventDefault();
-
-    const form = formEvent.target;
+  function handleRegistration(e) {
+    e.preventDefault();
+    const form = e.target;
     const registration = {
       name: form.name.value.trim(),
       roll: form.roll.value.trim(),
@@ -88,7 +106,6 @@ export default function EventDetails() {
       !registration.roll ||
       !registration.dept ||
       !registration.year ||
-      !registration.email ||
       !registration.phone
     ) {
       showToast("Please fill every field before submitting.", true);
@@ -96,22 +113,14 @@ export default function EventDetails() {
     }
 
     const savedRegistrations = readFromLocalStorage("registrations", []);
-    const duplicateRegistration = savedRegistrations.some(function (item) {
-      return item.eventId === event.id && item.email === registration.email;
-    });
-
-    if (duplicateRegistration) {
-      showToast("You've already registered with this email.", true);
-      return;
-    }
-
     savedRegistrations.push(registration);
     saveToLocalStorage("registrations", savedRegistrations);
-    form.reset();
-    form.style.display = "none";
-    document.querySelector(".registered-message").style.display = "block";
+
+    setIsRegistered(true);
     showToast("Registered successfully!");
   }
+
+  const showRegistrationForm = !alreadyRegistered && !isRegistered;
 
   return (
     <main>
@@ -167,49 +176,46 @@ export default function EventDetails() {
 
             <div className="detail-block">
               <h3>Register</h3>
-              <p
-                className="registered-message"
-                style={{ display: alreadyRegistered ? "block" : "none" }}
-              >
-                You are already registered for this event.
-              </p>
-              <form
-                onSubmit={handleRegistration}
-                style={{ display: alreadyRegistered ? "none" : "block" }}
-              >
-                <label htmlFor="name">Full Name</label>
-                <input type="text" id="name" name="name" required />
-                <label htmlFor="roll">Roll Number</label>
-                <input type="text" id="roll" name="roll" required />
-                <label htmlFor="dept">Department</label>
-                <input type="text" id="dept" name="dept" required />
-                <label htmlFor="year">Year</label>
-                <input
-                  type="text"
-                  id="year"
-                  name="year"
-                  placeholder="e.g. 2nd Year"
-                  required
-                />
-                <label htmlFor="email">Email Address</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={activeUser.email}
-                  readOnly
-                  required
-                />
-                <label htmlFor="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" required />
-                <button
-                  className="btn"
-                  style={{ marginTop: "16px", width: "100%" }}
-                  type="submit"
-                >
-                  Confirm Registration
-                </button>
-              </form>
+              {!showRegistrationForm ? (
+                <p className="registered-message" style={{ display: "block" }}>
+                  You are registered for this event.
+                </p>
+              ) : (
+                <form onSubmit={handleRegistration}>
+                  <label htmlFor="name">Full Name</label>
+                  <input ref={nameInputRef} type="text" id="name" name="name" required />
+                  <label htmlFor="roll">Roll Number</label>
+                  <input type="text" id="roll" name="roll" required />
+                  <label htmlFor="dept">Department</label>
+                  <input type="text" id="dept" name="dept" required />
+                  <label htmlFor="year">Year</label>
+                  <input
+                    type="text"
+                    id="year"
+                    name="year"
+                    placeholder="e.g. 2nd Year"
+                    required
+                  />
+                  <label htmlFor="email">Email Address</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={activeUser.email}
+                    readOnly
+                    required
+                  />
+                  <label htmlFor="phone">Phone Number</label>
+                  <input type="tel" id="phone" name="phone" required />
+                  <button
+                    className="btn"
+                    style={{ marginTop: "16px", width: "100%" }}
+                    type="submit"
+                  >
+                    Confirm Registration
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>

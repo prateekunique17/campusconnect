@@ -1,39 +1,60 @@
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   formatDate,
   readFromLocalStorage,
   saveToLocalStorage,
-} from "../utils/storage.js";
-
-function removeRegistration(index) {
-  const registrations = readFromLocalStorage("registrations", []);
-  registrations.splice(index, 1);
-  saveToLocalStorage("registrations", registrations);
-  window.location.reload();
-}
-
-function removeSavedEvent(index) {
-  const savedEvents = readFromLocalStorage("saved", []);
-  savedEvents.splice(index, 1);
-  saveToLocalStorage("saved", savedEvents);
-  window.location.reload();
-}
-
-function showTab(tabName) {
-  const showRegistrations = tabName === "registrations";
-  const registrationsTab = document.querySelector(".registrations-tab");
-  const savedTab = document.querySelector(".saved-tab");
-  const registrationsList = document.querySelector(".registrations-list");
-  const savedList = document.querySelector(".saved-list");
-
-  registrationsTab.classList.toggle("active", showRegistrations);
-  savedTab.classList.toggle("active", !showRegistrations);
-  registrationsList.style.display = showRegistrations ? "grid" : "none";
-  savedList.style.display = showRegistrations ? "none" : "grid";
-}
+} from "../content/storage.js";
 
 export default function Registrations() {
-  const registrations = readFromLocalStorage("registrations", []);
-  const savedEvents = readFromLocalStorage("saved", []);
+  // ----------------------------------------------------
+  // 1. useState: Current active tab and data lists
+  // ----------------------------------------------------
+  const [activeTab, setActiveTab] = useState("registrations");
+  const [registrations, setRegistrations] = useState(() =>
+    readFromLocalStorage("registrations", [])
+  );
+  const [savedEvents, setSavedEvents] = useState(() =>
+    readFromLocalStorage("saved", [])
+  );
+
+  // ----------------------------------------------------
+  // 2. useEffect: Keep browser window scrolled to top when switching tabs
+  // ----------------------------------------------------
+  useEffect(() => {
+    if (tabContainerRef.current) {
+      tabContainerRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [activeTab]);
+
+  // ----------------------------------------------------
+  // 3. useRef: Reference to the tab container element
+  // ----------------------------------------------------
+  const tabContainerRef = useRef(null);
+
+  // ----------------------------------------------------
+  // 4. useMemo: Quick checks for list count
+  // ----------------------------------------------------
+  const counts = useMemo(
+    () => ({
+      regCount: registrations.length,
+      savedCount: savedEvents.length,
+    }),
+    [registrations, savedEvents]
+  );
+
+  function handleCancelRegistration(index) {
+    const updated = [...registrations];
+    updated.splice(index, 1);
+    saveToLocalStorage("registrations", updated);
+    setRegistrations(updated);
+  }
+
+  function handleRemoveSaved(index) {
+    const updated = [...savedEvents];
+    updated.splice(index, 1);
+    saveToLocalStorage("saved", updated);
+    setSavedEvents(updated);
+  }
 
   return (
     <main>
@@ -44,66 +65,69 @@ export default function Registrations() {
             <p>Everything stored locally in your browser</p>
           </div>
 
-          <div className="reg-tabs">
+          <div className="reg-tabs" ref={tabContainerRef}>
             <button
-              className="registrations-tab active"
-              onClick={() => showTab("registrations")}
+              className={`registrations-tab ${activeTab === "registrations" ? "active" : ""}`}
+              onClick={() => setActiveTab("registrations")}
             >
-              My Registrations
+              My Registrations ({counts.regCount})
             </button>
-            <button className="saved-tab" onClick={() => showTab("saved")}>
-              Saved Events
+            <button
+              className={`saved-tab ${activeTab === "saved" ? "active" : ""}`}
+              onClick={() => setActiveTab("saved")}
+            >
+              Saved Events ({counts.savedCount})
             </button>
           </div>
 
-          <div className="reg-list registrations-list">
-            {registrations.length === 0 && (
-              <p className="empty-state">No registrations yet.</p>
-            )}
-            {registrations.map(function (registration, index) {
-              return (
-                <div
-                  className="reg-row"
-                  key={`${registration.eventId}-${registration.email}-${index}`}
-                >
-                  <div>
-                    <strong>{registration.title}</strong>
-                    <p className="meta">
-                      {formatDate(registration.date)} - {registration.email}
-                    </p>
-                  </div>
-                  <button
-                    className="cancel-btn"
-                    onClick={() => removeRegistration(index)}
+          {activeTab === "registrations" ? (
+            <div className="reg-list registrations-list">
+              {registrations.length === 0 ? (
+                <p className="empty-state">No registrations yet.</p>
+              ) : (
+                registrations.map((registration, index) => (
+                  <div
+                    className="reg-row"
+                    key={`${registration.eventId}-${registration.email}-${index}`}
                   >
-                    Cancel
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="reg-list saved-list" style={{ display: "none" }}>
-            {savedEvents.length === 0 && (
-              <p className="empty-state">No saved events yet.</p>
-            )}
-            {savedEvents.map(function (savedEvent, index) {
-              return (
-                <div className="reg-row" key={`${savedEvent.title}-${index}`}>
-                  <div>
-                    <strong>{savedEvent.title}</strong>
-                    <p className="meta">{formatDate(savedEvent.date)}</p>
+                    <div>
+                      <strong>{registration.title}</strong>
+                      <p className="meta">
+                        {formatDate(registration.date)} - {registration.email}
+                      </p>
+                    </div>
+                    <button
+                      className="cancel-btn"
+                      onClick={() => handleCancelRegistration(index)}
+                    >
+                      Cancel
+                    </button>
                   </div>
-                  <button
-                    className="cancel-btn"
-                    onClick={() => removeSavedEvent(index)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="reg-list saved-list">
+              {savedEvents.length === 0 ? (
+                <p className="empty-state">No saved events yet.</p>
+              ) : (
+                savedEvents.map((savedEvent, index) => (
+                  <div className="reg-row" key={`${savedEvent.title}-${index}`}>
+                    <div>
+                      <strong>{savedEvent.title}</strong>
+                      <p className="meta">{formatDate(savedEvent.date)}</p>
+                    </div>
+                    <button
+                      className="cancel-btn"
+                      onClick={() => handleRemoveSaved(index)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </section>
     </main>

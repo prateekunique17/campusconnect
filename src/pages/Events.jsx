@@ -1,10 +1,11 @@
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import EventCard from "../components/EventCard.jsx";
 import {
   getAllEvents,
   readFromLocalStorage,
   saveToLocalStorage,
-} from "../utils/storage.js";
+} from "../content/storage.js";
 
 const categories = [
   "Technical",
@@ -16,40 +17,61 @@ const categories = [
 ];
 
 export default function Events() {
-  const events = getAllEvents();
-  const customEvents = readFromLocalStorage("customEvents", []);
+  // ----------------------------------------------------
+  // 1. useState: Stores reactive data that changes the UI
+  // ----------------------------------------------------
+  // Stores the list of custom events saved by the user in localStorage
+  const [customEvents, setCustomEvents] = useState(() =>
+    readFromLocalStorage("customEvents", [])
+  );
+  // Stores the search query entered in the search box
+  const [searchTerm, setSearchTerm] = useState("");
+  // Stores the currently selected category dropdown filter
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-  function deleteEvent(eventId) {
-    const answer = window.confirm("Do you want to delete this event?");
-    if (!answer) {
-      return;
+  // ----------------------------------------------------
+  // 2. useEffect: Handles side-effects (e.g., auto-focusing on mount)
+  // ----------------------------------------------------
+  useEffect(() => {
+    // When the user opens the events page, automatically focus the search bar
+    if (searchRef.current) {
+      searchRef.current.focus();
     }
+  }, []);
 
-    const remainingEvents = customEvents.filter(function (event) {
-      return event.id !== eventId;
+  // ----------------------------------------------------
+  // 3. useRef: References a specific DOM element directly
+  // ----------------------------------------------------
+  // Attached to the search input element to control focus cleanly
+  const searchRef = useRef(null);
+
+  // ----------------------------------------------------
+  // 4. useMemo: Computes and memorizes filtered results efficiently
+  // ----------------------------------------------------
+  // Recalculates the event list only when customEvents, searchTerm, or selectedCategory changes
+  const filteredEvents = useMemo(() => {
+    const all = getAllEvents();
+    const query = searchTerm.trim().toLowerCase();
+
+    return all.filter((ev) => {
+      const matchesSearch =
+        ev.title.toLowerCase().includes(query) ||
+        (ev.organizer && ev.organizer.toLowerCase().includes(query));
+      const matchesCategory =
+        selectedCategory === "all" || ev.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
     });
-    saveToLocalStorage("customEvents", remainingEvents);
-    window.location.reload();
-  }
+  }, [customEvents, searchTerm, selectedCategory]);
 
-  function filterEvents() {
-    const searchInput = document.querySelector("#event-search");
-    const categoryInput = document.querySelector("#event-category");
-    const cards = document.querySelectorAll(".card");
-    const searchText = searchInput.value.trim().toLowerCase();
+  // Handler to delete a user-created event cleanly using React state
+  function handleDeleteEvent(eventId) {
+    const confirmed = window.confirm("Do you want to delete this event?");
+    if (!confirmed) return;
 
-    cards.forEach(function (card) {
-      const eventId = Number(card.getAttribute("data-id"));
-      const event = events.find(function (item) {
-        return item.id === eventId;
-      });
-      const hasSearchText =
-        event.title.toLowerCase().includes(searchText) ||
-        event.organizer.toLowerCase().includes(searchText);
-      const hasCategory =
-        categoryInput.value === "all" || event.category === categoryInput.value;
-      card.style.display = hasSearchText && hasCategory ? "block" : "none";
-    });
+    const remaining = customEvents.filter((ev) => ev.id !== eventId);
+    saveToLocalStorage("customEvents", remaining);
+    setCustomEvents(remaining);
   }
 
   return (
@@ -64,38 +86,49 @@ export default function Events() {
           </div>
 
           <div className="filter-bar">
+            {/* Using searchRef on input and updating searchTerm on change */}
             <input
+              ref={searchRef}
               id="event-search"
               type="text"
               placeholder="Search by event name or organizer..."
-              onInput={filterEvents}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <select id="event-category" onChange={filterEvents}>
+
+            {/* Controlled dropdown for category */}
+            <select
+              id="event-category"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
               <option value="all">All categories</option>
-              {categories.map(function (category) {
-                return (
-                  <option value={category} key={category}>
-                    {category}
-                  </option>
-                );
-              })}
+              {categories.map((category) => (
+                <option value={category} key={category}>
+                  {category}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="event-grid">
-            {events.map(function (event) {
-              const isCustomEvent = customEvents.some(function (customEvent) {
-                return customEvent.id === event.id;
-              });
+            {filteredEvents.length === 0 ? (
+              <p className="empty-state">No events match your criteria.</p>
+            ) : (
+              filteredEvents.map((event) => {
+                const isCustomEvent = customEvents.some(
+                  (custom) => custom.id === event.id
+                );
 
-              return (
-                <EventCard
-                  key={event.id}
-                  ev={event}
-                  onDelete={isCustomEvent ? deleteEvent : null}
-                />
-              );
-            })}
+                return (
+                  <EventCard
+                    key={event.id}
+                    ev={event}
+                    onDelete={isCustomEvent ? handleDeleteEvent : null}
+                  />
+                );
+              })
+            )}
           </div>
         </div>
       </section>

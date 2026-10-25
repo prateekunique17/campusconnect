@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { formatDate, getCategoryTag } from "../utils/storage.js";
+import { formatDate, getCategoryTag } from "../content/storage.js";
 
+// Reusable card component to show summary information for an event
 export default function EventCard({ ev, onDelete }) {
   const category = getCategoryTag(ev.category);
 

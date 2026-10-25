@@ -21,7 +21,7 @@ export default function Navbar({ theme, activeUser, onToggleTheme, onLogout }) {
             className="theme-toggle"
             onClick={onToggleTheme}
           >
-            {theme === "light" ? "Light Mode" : "Dark Mode"}
+            {theme === "light" ? "🌙 Dark Mode" : "☀️ Light Mode"}
           </button>
           {activeUser ? (
             <button className="nav-login" onClick={onLogout}>

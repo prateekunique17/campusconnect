@@ -1,30 +1,66 @@
-import { readFromLocalStorage, saveToLocalStorage } from "../utils/storage.js";
-import { showToast } from "../context/ToastContext.jsx";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { readFromLocalStorage, saveToLocalStorage } from "../content/storage.js";
+import { showToast } from "../content/ToastContent.jsx";
+
+const CATEGORIES = [
+  "Technical",
+  "Cultural",
+  "Sports",
+  "Workshop",
+  "Seminar",
+  "Hackathon",
+];
 
 export default function AddEvent() {
-  function handleImageChange(event) {
-    const file = event.target.files[0];
+  const navigate = useNavigate();
+
+  // ----------------------------------------------------
+  // 1. useState: Stores preview image and submitting status
+  // ----------------------------------------------------
+  const [imagePreview, setImagePreview] = useState(null);
+  const [category, setCategory] = useState("Technical");
+
+  // ----------------------------------------------------
+  // 2. useEffect: Focus title input upon loading page
+  // ----------------------------------------------------
+  useEffect(() => {
+    if (titleInputRef.current) {
+      titleInputRef.current.focus();
+    }
+  }, []);
+
+  // ----------------------------------------------------
+  // 3. useRef: Reference to the title input for auto-focus
+  // ----------------------------------------------------
+  const titleInputRef = useRef(null);
+
+  // ----------------------------------------------------
+  // 4. useMemo: Valid category options list
+  // ----------------------------------------------------
+  const categoryOptions = useMemo(() => CATEGORIES, []);
+
+  // Handle image upload and generate preview data URL
+  function handleImageChange(e) {
+    const file = e.target.files[0];
     if (!file) {
-      document.querySelector(".image-preview").innerHTML = "";
+      setImagePreview(null);
       return;
     }
     const reader = new FileReader();
-    reader.onload = function () {
-      document.querySelector(".image-preview").innerHTML =
-        `<img src="${reader.result}" alt="Preview" />`;
+    reader.onload = () => {
+      setImagePreview(reader.result);
     };
     reader.readAsDataURL(file);
   }
 
-  function handleSubmit(event) {
-    event.preventDefault();
-
-    const title = event.target.title.value.trim();
-    const category = event.target.category.value;
-    const date = event.target.date.value;
-    const venue = event.target.venue.value.trim();
-    const organizer = event.target.organizer.value.trim();
-    const image = document.querySelector(".image-preview img");
+  function handleSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const title = form.title.value.trim();
+    const date = form.date.value;
+    const venue = form.venue.value.trim();
+    const organizer = form.organizer.value.trim();
 
     if (!title || !date || !venue || !organizer) {
       showToast("Please fill title, date, venue and organizer.", true);
@@ -34,18 +70,18 @@ export default function AddEvent() {
     const customEvents = readFromLocalStorage("customEvents", []);
     customEvents.push({
       id: Date.now(),
-      title: title,
-      category: category,
-      date: date,
-      venue: venue,
-      organizer: organizer,
+      title,
+      category,
+      date,
+      venue,
+      organizer,
       seats: 50,
-      image: image ? image.src : null,
+      image: imagePreview,
     });
-    saveToLocalStorage("customEvents", customEvents);
 
+    saveToLocalStorage("customEvents", customEvents);
     showToast("Event added!");
-    window.location.href = "/events";
+    navigate("/events");
   }
 
   return (
@@ -54,9 +90,7 @@ export default function AddEvent() {
         <div className="container" style={{ maxWidth: "640px" }}>
           <div className="section-head">
             <h2>Add a New Event</h2>
-            <p>
-              It will show up in the Events directory right after you submit
-            </p>
+            <p>It will show up in the Events directory right after you submit</p>
           </div>
 
           <div className="add-event-block">
@@ -64,17 +98,27 @@ export default function AddEvent() {
               <div className="add-event-grid">
                 <div>
                   <label htmlFor="title">Event Title</label>
-                  <input type="text" id="title" name="title" required />
+                  <input
+                    ref={titleInputRef}
+                    type="text"
+                    id="title"
+                    name="title"
+                    required
+                  />
                 </div>
                 <div>
                   <label htmlFor="category">Category</label>
-                  <select id="category" name="category">
-                    <option value="Technical">Technical</option>
-                    <option value="Cultural">Cultural</option>
-                    <option value="Sports">Sports</option>
-                    <option value="Workshop">Workshop</option>
-                    <option value="Seminar">Seminar</option>
-                    <option value="Hackathon">Hackathon</option>
+                  <select
+                    id="category"
+                    name="category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    {categoryOptions.map((cat) => (
+                      <option value={cat} key={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -100,7 +144,9 @@ export default function AddEvent() {
                 accept="image/*"
                 onChange={handleImageChange}
               />
-              <div className="image-preview"></div>
+              <div className="image-preview">
+                {imagePreview && <img src={imagePreview} alt="Preview" />}
+              </div>
 
               <button
                 className="btn"

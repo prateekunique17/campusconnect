@@ -1,6 +1,7 @@
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import EventCard from "../components/EventCard.jsx";
-import { getAllEvents } from "../utils/storage.js";
+import { getAllEvents } from "../content/storage.js";
 
 const benefits = [
   {
@@ -20,17 +21,39 @@ const benefits = [
   },
 ];
 
+const CATEGORIES = [
+  "Technical",
+  "Cultural",
+  "Sports",
+  "Workshop",
+  "Seminar",
+  "Hackathon",
+];
+
 export default function Home() {
-  const allEvents = getAllEvents();
-  const featured = allEvents.slice(0, 3);
-  const categories = [
-    "Technical",
-    "Cultural",
-    "Sports",
-    "Workshop",
-    "Seminar",
-    "Hackathon",
-  ];
+  // ----------------------------------------------------
+  // 1. useState: Stores list of all events
+  // ----------------------------------------------------
+  const [eventsList] = useState(() => getAllEvents());
+
+  // ----------------------------------------------------
+  // 2. useEffect: Smooth scroll or initial greeting side-effect
+  // ----------------------------------------------------
+  useEffect(() => {
+    // Subtle initial check or scroll top
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
+  // ----------------------------------------------------
+  // 3. useRef: References the featured section for quick link scrolling
+  // ----------------------------------------------------
+  const featuredRef = useRef(null);
+
+  // ----------------------------------------------------
+  // 4. useMemo: Derives the top 3 featured events and categories
+  // ----------------------------------------------------
+  const featuredEvents = useMemo(() => eventsList.slice(0, 3), [eventsList]);
+  const categories = useMemo(() => CATEGORIES, []);
 
   return (
     <main className="landing-page">
@@ -117,7 +140,7 @@ export default function Home() {
         </div>
       </div>
 
-      <section className="section landing-section" id="featured">
+      <section className="section landing-section" id="featured" ref={featuredRef}>
         <div className="container">
           <div className="section-head landing-section-head">
             <div>
@@ -134,7 +157,7 @@ export default function Home() {
             ))}
           </div>
           <div className="event-grid">
-            {featured.map((event) => (
+            {featuredEvents.map((event) => (
               <EventCard key={event.id} ev={event} />
             ))}
           </div>
